@@ -1,56 +1,24 @@
 import os
 import shutil
+from flasher.utils import resource_path
 
-# kext library (คุณต้องเตรียมโฟลเดอร์นี้)
-KEXT_LIBRARY = "kexts_repo"
+def install_kexts(base_path, platform_type):
+    kext_repo = resource_path("kexts_repo")
 
-BASE_KEXTS = [
-    "Lilu.kext",
-    "VirtualSMC.kext",
-]
+    kexts = [
+        "Lilu.kext",
+        "VirtualSMC.kext",
+        "WhateverGreen.kext"
+    ]
 
-INTEL_KEXTS = [
-    "WhateverGreen.kext",
-    "IntelMausi.kext"
-]
-
-AMD_KEXTS = [
-    "WhateverGreen.kext"
-]
-
-def detect_kexts(cpu_type):
-    kexts = BASE_KEXTS.copy()
-
-    if cpu_type == "Intel":
-        kexts += INTEL_KEXTS
-    elif cpu_type == "AMD":
-        kexts += AMD_KEXTS
-
-    return kexts
-
-
-def detect_kexts(hw):
-    k = ["Lilu.kext", "VirtualSMC.kext", "WhateverGreen.kext"]
-
-    if hw["type"] == "laptop":
-        k.append("VoodooPS2Controller.kext")
-
-    if "realtek" in hw["gpu"].lower():
-        k.append("RealtekRTL8111.kext")
-
-    return k
-def install_kexts(efi_path, cpu_type):
-    kexts = detect_kexts(cpu_type)
-
-    kext_dir = os.path.join(efi_path, "EFI/OC/Kexts")
-    os.makedirs(kext_dir, exist_ok=True)
+    dst = os.path.join(base_path, "EFI/OC/Kexts")
+    os.makedirs(dst, exist_ok=True)
 
     for k in kexts:
-        src = os.path.join(KEXT_LIBRARY, k)
-        dst = os.path.join(kext_dir, k)
+        src = os.path.join(kext_repo, k)
 
         if os.path.exists(src):
-            shutil.copytree(src, dst, dirs_exist_ok=True)
-            print(f"✅ Added {k}")
+            shutil.copytree(src, os.path.join(dst, k), dirs_exist_ok=True)
+            print("✅", k)
         else:
-            print(f"⚠️ Missing {k}")
+            print("⚠️ missing", k)
