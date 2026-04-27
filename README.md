@@ -1,5 +1,10 @@
+## ⚠️ WARNING
+This tool will completely erase your selected disk.
+Double check before flashing.
+
 # usb-flasher
 ::writing{variant="standard" id="84321"}
+
 # USB Flasher (CLI)
 
 Simple USB flasher for .img files (Phase 1)
