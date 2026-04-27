@@ -1,5 +1,7 @@
 import os
 from flasher.system import get_cpu_info, detect_platform
+from flasher.kexts import install_kexts
+from flasher.system import get_cpu_info, detect_platform
 
 def generate_config(base_path):
     cpu_info = get_cpu_info()
