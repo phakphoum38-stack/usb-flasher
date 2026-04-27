@@ -1,18 +1,21 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox
+from tkinter.ttk import Progressbar
+import threading
 
 from flasher.devices import get_usb_devices
 from flasher.core import flash_image
 from flasher.verify import verify_flash
 from flasher.formats import prepare_image
-from flasher.efi import build_efi
+from flasher.efi import generate_config
 
+devices = []
 selected_device = None
 
-def select_image():
+def browse():
     path = filedialog.askopenfilename()
-    image_entry.delete(0, tk.END)
-    image_entry.insert(0, path)
+    entry.delete(0, tk.END)
+    entry.insert(0, path)
 
 def load_devices():
     global devices
@@ -20,63 +23,53 @@ def load_devices():
     listbox.delete(0, tk.END)
 
     for d in devices:
-        listbox.insert(tk.END, f"{d['path']} | {d['model']} | {d['size']}")
+        listbox.insert(tk.END, f"{d['path']} | {d['model']}")
 
-def choose_device(event):
+def select_device(evt):
     global selected_device
-    index = listbox.curselection()[0]
-    selected_device = devices[index]["path"]
+    idx = listbox.curselection()[0]
+    selected_device = devices[idx]["path"]
 
-def start_flash():
-    if not selected_device:
-        messagebox.showerror("Error", "Select device first")
-        return
-
-    image = image_entry.get()
-
-    if not image:
-        messagebox.showerror("Error", "Select image")
-        return
-
+def run_flash():
     try:
-        img = prepare_image(image)
+        img = prepare_image(entry.get())
         flash_image(img, selected_device)
         verify_flash(img, selected_device)
-
-        messagebox.showinfo("Done", "Flash complete!")
-
+        messagebox.showinfo("Done", "Flash complete")
     except Exception as e:
         messagebox.showerror("Error", str(e))
 
+def start_flash():
+    if not selected_device:
+        messagebox.showerror("Error", "Select device")
+        return
 
-def generate_efi():
+    threading.Thread(target=run_flash).start()
+
+def build_efi():
     folder = filedialog.askdirectory()
-    opencore = filedialog.askdirectory(title="Select OpenCore folder")
+    if folder:
+        generate_config(folder)
+        messagebox.showinfo("EFI", "Config generated")
 
-    if folder and opencore:
-        build_efi(folder, opencore)
-        messagebox.showinfo("EFI", "EFI generated!")
-
-
-# ================= UI =================
-
+# UI
 root = tk.Tk()
 root.title("USB Flasher Pro")
 
-tk.Label(root, text="Image").pack()
-image_entry = tk.Entry(root, width=50)
-image_entry.pack()
+entry = tk.Entry(root, width=50)
+entry.pack()
 
-tk.Button(root, text="Browse", command=select_image).pack()
+tk.Button(root, text="Browse", command=browse).pack()
+tk.Button(root, text="Load USB", command=load_devices).pack()
 
-tk.Button(root, text="Load USB Devices", command=load_devices).pack()
-
-listbox = tk.Listbox(root, width=60)
+listbox = tk.Listbox(root)
 listbox.pack()
-listbox.bind("<<ListboxSelect>>", choose_device)
+listbox.bind("<<ListboxSelect>>", select_device)
+
+progress = Progressbar(root, length=300)
+progress.pack()
 
 tk.Button(root, text="Flash", command=start_flash).pack()
-
-tk.Button(root, text="Generate EFI", command=generate_efi).pack()
+tk.Button(root, text="Generate EFI", command=build_efi).pack()
 
 root.mainloop()
