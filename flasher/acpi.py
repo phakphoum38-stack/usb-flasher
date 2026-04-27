@@ -1,16 +1,19 @@
 import os
 import shutil
+from flasher.utils import resource_path
 
-def apply_acpi(base, hw):
-    repo = "acpi_repo"
-    dst = os.path.join(base, "EFI/OC/ACPI")
+def apply_acpi(base_path, hw):
+    repo = resource_path("acpi_repo")
+    dst = os.path.join(base_path, "EFI/OC/ACPI")
 
-    tables = ["SSDT-EC.aml", "SSDT-PLUG.aml"]
+    os.makedirs(dst, exist_ok=True)
+
+    files = ["SSDT-EC.aml", "SSDT-PLUG.aml"]
 
     if hw["type"] == "laptop":
-        tables.append("SSDT-XOSI.aml")
+        files.append("SSDT-XOSI.aml")
 
-    for t in tables:
-        src = os.path.join(repo, t)
+    for f in files:
+        src = os.path.join(repo, f)
         if os.path.exists(src):
             shutil.copy(src, dst)
