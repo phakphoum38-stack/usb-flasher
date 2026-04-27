@@ -1,3 +1,5 @@
+import hashlib
+from tqdm import tqdm
 import argparse
 import os
 import sys
