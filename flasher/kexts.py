@@ -29,6 +29,16 @@ def detect_kexts(cpu_type):
     return kexts
 
 
+def detect_kexts(hw):
+    k = ["Lilu.kext", "VirtualSMC.kext", "WhateverGreen.kext"]
+
+    if hw["type"] == "laptop":
+        k.append("VoodooPS2Controller.kext")
+
+    if "realtek" in hw["gpu"].lower():
+        k.append("RealtekRTL8111.kext")
+
+    return k
 def install_kexts(efi_path, cpu_type):
     kexts = detect_kexts(cpu_type)
 
