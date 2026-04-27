@@ -6,9 +6,15 @@ PyInstaller.__main__.run([
     "--windowed",
     "--name=USB-Flasher-Pro",
 
-    # 🔥 สำคัญ: กัน import หาย
+    # 🔥 CORE modules
     "--hidden-import=flasher.efi",
     "--hidden-import=flasher.kexts",
     "--hidden-import=flasher.hardware",
     "--hidden-import=flasher.acpi",
+    "--hidden-import=flasher.patches",
+
+    # 📦 DATA FOLDERS (สำคัญมาก)
+    "--add-data=kexts_repo;kexts_repo",
+    "--add-data=acpi_repo;acpi_repo",
+    "--add-data=OpenCore;OpenCore",
 ])
