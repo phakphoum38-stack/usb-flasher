@@ -60,7 +60,11 @@ jobs:
 
         with:
 
-          files: dist/*
+          files: |
+            files: |
+              dist/USBFlashToolPro.exe
+              dist/usb-flasher-cli.exe
+              USBFlashToolPro-Setup.exe
 
         env:
 
