@@ -5,7 +5,8 @@ def flash_with_rust(img, dev, cb=None):
         ["rust-flash.exe", img, dev],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
-        text=True
+        text=True,
+        bufsize=1
     )
 
     for line in process.stdout:
@@ -13,13 +14,15 @@ def flash_with_rust(img, dev, cb=None):
 
         if "|" in line:
             try:
-                per, sp = line.split("|")
-                per = int(float(per.replace("%", "")))
-                sp = float(sp.replace("MB/s", ""))
+                p, s = line.split("|")
+                p = int(float(p.replace("%", "")))
 
                 if cb:
-                    cb(per, sp)
+                    cb(p, 0)
             except:
                 pass
 
-    return process
+    process.wait()
+
+    if process.returncode != 0:
+        raise Exception("Flash process failed")
