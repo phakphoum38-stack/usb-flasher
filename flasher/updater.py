@@ -1,36 +1,24 @@
-import requests
-import os
-import shutil
+import requests, subprocess, os
 
-CURRENT_VERSION = "1.0.0"
-UPDATE_URL = "https://your-server.com/version.json"
+API="https://api.github.com/repos/phakphoum38-stack/usb-flasher/releases/latest"
 
-
-def check_update():
+def check_update(v):
     try:
-        data = requests.get(UPDATE_URL).json()
+        r=requests.get(API,timeout=5).json()
+        if r["tag_name"].replace("v","")!=v:
+            return r
+    except: pass
 
-        latest = data["version"]
-        url = data["url"]
+def download_update(d):
+    for a in d["assets"]:
+        if a["name"].endswith(".exe"):
+            p="update.exe"
+            open(p,"wb").write(requests.get(a["browser_download_url"]).content)
+            return p
 
-        if latest != CURRENT_VERSION:
-            return download_update(url)
-
-        return False
-
-    except Exception as e:
-        print("Update check failed:", e)
-        return False
-
-
-def download_update(url):
-    print("⬇️ Downloading update...")
-
-    r = requests.get(url, stream=True)
-
-    with open("update.zip", "wb") as f:
-        for chunk in r.iter_content(1024):
-            f.write(chunk)
+def run_update(p):
+    subprocess.Popen([p])
+    os._exit(0)
 
     print("✅ Update downloaded")
     return True
