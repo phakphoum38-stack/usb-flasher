@@ -43,16 +43,30 @@ class App:
         self.build_ui()
         self.check_updates()
 
+    # =========================
+    # 📝 LOG + ROTATION
+    # =========================
     def log(self, msg):
+        if os.path.exists("logs/latest.log") and os.path.getsize("logs/latest.log") > 1_000_000:
+            try:
+                os.rename("logs/latest.log", "logs/old.log")
+            except:
+                pass
+
         t = datetime.now().strftime("%H:%M:%S")
         line = f"[{t}] {msg}\n"
 
-        self.logbox.insert(tk.END, line)
-        self.logbox.see(tk.END)
+        self.root.after(0, lambda: (
+            self.logbox.insert(tk.END, line),
+            self.logbox.see(tk.END)
+        ))
 
-        with open("logs/latest.log", "a") as f:
+        with open("logs/latest.log", "a", encoding="utf-8") as f:
             f.write(line)
 
+    # =========================
+    # 🔄 UPDATE
+    # =========================
     def check_updates(self):
         if not self.cfg.get("auto_update"):
             return
@@ -64,6 +78,9 @@ class App:
                 if path:
                     run_update(path)
 
+    # =========================
+    # 🎨 UI
+    # =========================
     def build_ui(self):
         tk.Label(self.root, text="USB Flash Tool Pro", font=("Arial", 18)).pack(pady=10)
 
@@ -94,6 +111,9 @@ class App:
         self.logbox = tk.Text(self.root, height=8)
         self.logbox.pack(fill="both", expand=True)
 
+    # =========================
+    # 📁 SELECT IMAGE
+    # =========================
     def select_image(self):
         path = filedialog.askopenfilename()
         if path:
@@ -101,6 +121,9 @@ class App:
             self.file_label.config(text=path)
             self.log(f"Image: {path}")
 
+    # =========================
+    # 💽 LOAD USB
+    # =========================
     def load_devices(self):
         self.devices = get_usb_devices()
         self.listbox.delete(0, tk.END)
@@ -117,16 +140,26 @@ class App:
         self.device = self.devices[idx]["path"]
         self.log(f"Device: {self.device}")
 
+    # =========================
+    # ❌ CANCEL
+    # =========================
     def cancel(self):
         self.running = False
         if self.proc:
-            self.proc.terminate()
-        self.status.config(text="Cancelled")
+            try:
+                self.proc.terminate()
+            except:
+                pass
+
         self.pb['value'] = 0
+        self.status.config(text="Cancelled")
         self.flash_btn.config(state="normal")
         self.cancel_btn.config(state="disabled")
         self.log("Cancelled")
 
+    # =========================
+    # 🚀 START FLASH
+    # =========================
     def start(self):
         if not is_admin():
             messagebox.showerror("Error", "Run as admin")
@@ -136,11 +169,19 @@ class App:
             messagebox.showerror("Error", "Select image + USB")
             return
 
+        # 🔥 CONFIRM GUI (แทน input)
+        if not messagebox.askyesno("Confirm", f"Flash {self.device} ?"):
+            return
+
         def progress(p, s):
             if not self.running:
                 return
-            self.pb['value'] = p
-            self.status.config(text=f"{p}% | {s} MB/s")
+
+            # 🔥 THREAD-SAFE UI UPDATE
+            self.root.after(0, lambda: (
+                self.pb.config(value=p),
+                self.status.config(text=f"{p}% | {s} MB/s")
+            ))
 
         def run():
             try:
