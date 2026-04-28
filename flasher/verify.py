@@ -1,3 +1,15 @@
+def quick_verify(img, dev):
+    """
+    Verify เฉพาะช่วงต้น (เร็วมาก)
+    """
+    try:
+        with open(img, "rb") as f1, open(dev, "rb") as f2:
+            return f1.read(1024 * 1024) == f2.read(1024 * 1024)
+    except:
+        return False
+
+
+# optional: เผื่ออยากใช้แบบเต็มในอนาคต
 import hashlib
 
 def sha(path):
@@ -10,7 +22,7 @@ def sha(path):
             h.update(c)
     return h.hexdigest()
 
-def verify_flash(a, b):
+def full_verify(a, b):
     try:
         return sha(a) == sha(b)
     except:
