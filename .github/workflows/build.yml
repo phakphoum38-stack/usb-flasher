@@ -40,7 +40,7 @@ jobs:
           pyinstaller wizard.py ^
             --noconfirm ^
             --windowed ^
-            --onefile ^
+            --onedir ^
             --name USBFlashToolPro ^
             --icon=icon.ico
             --add-binary "rust-flash.exe;." ^
@@ -58,8 +58,9 @@ jobs:
         run: |
           pyinstaller flasher.py ^
             --noconfirm ^
-            --onefile ^
+            --onedir ^
             --name usb-flasher-cli ^
+            --icon=icon.ico
             --add-binary "rust-flash.exe;." ^
             --clean ^
             --strip ^
