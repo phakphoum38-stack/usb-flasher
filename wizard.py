@@ -10,6 +10,7 @@ from flasher.formats import prepare_image
 from flasher.devices import get_usb_devices
 from flasher.autofix import validate_and_fix
 from flasher.cloud import cloud_fix
+from flasher.progress import ProgressEmitter
 
 state = {
     "image": "",
