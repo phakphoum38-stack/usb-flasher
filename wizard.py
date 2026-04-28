@@ -3,17 +3,18 @@ from tkinter import filedialog, messagebox, ttk
 import threading
 import ctypes
 import os
+import time
 from datetime import datetime
 
 from flasher.devices import get_usb_devices
 from flasher.safety import safety_pipeline
 from flasher.rust_core import flash_with_rust
-from flasher.verify import verify_flash
+from flasher.verify import quick_verify
 from flasher.updater import check_update, download_update, run_update
 from flasher.crash_report import send_crash
 from flasher.config import load_config
 
-APP_VERSION = "1.0.0"
+APP_VERSION = "1.1.0"
 
 LOG_DIR = "logs"
 os.makedirs(LOG_DIR, exist_ok=True)
@@ -37,8 +38,9 @@ class App:
         self.image = ""
         self.device = None
         self.devices = []
-        self.proc = None
         self.running = False
+
+        self.last_update = 0  # 🔥 throttle UI
 
         self.build_ui()
         self.check_updates()
@@ -47,9 +49,11 @@ class App:
     # 📝 LOG + ROTATION
     # =========================
     def log(self, msg):
-        if os.path.exists("logs/latest.log") and os.path.getsize("logs/latest.log") > 1_000_000:
+        path = os.path.join(LOG_DIR, "latest.log")
+
+        if os.path.exists(path) and os.path.getsize(path) > 1_000_000:
             try:
-                os.rename("logs/latest.log", "logs/old.log")
+                os.replace(path, os.path.join(LOG_DIR, "old.log"))
             except:
                 pass
 
@@ -61,7 +65,7 @@ class App:
             self.logbox.see(tk.END)
         ))
 
-        with open("logs/latest.log", "a", encoding="utf-8") as f:
+        with open(path, "a", encoding="utf-8") as f:
             f.write(line)
 
     # =========================
@@ -71,12 +75,15 @@ class App:
         if not self.cfg.get("auto_update"):
             return
 
-        data = check_update(APP_VERSION)
-        if data:
-            if messagebox.askyesno("Update", "New version available. Update now?"):
-                path = download_update(data)
-                if path:
-                    run_update(path)
+        try:
+            data = check_update(APP_VERSION)
+            if data:
+                if messagebox.askyesno("Update", "New version available. Update now?"):
+                    path = download_update(data)
+                    if path:
+                        run_update(path)
+        except:
+            pass
 
     # =========================
     # 🎨 UI
@@ -95,7 +102,7 @@ class App:
         self.listbox.pack(fill="both", expand=True)
         self.listbox.bind("<<ListboxSelect>>", self.select_device)
 
-        self.pb = ttk.Progressbar(self.root, length=500)
+        self.pb = ttk.Progressbar(self.root, length=500, maximum=100)
         self.pb.pack(pady=10)
 
         self.status = tk.Label(self.root, text="Idle")
@@ -145,12 +152,6 @@ class App:
     # =========================
     def cancel(self):
         self.running = False
-        if self.proc:
-            try:
-                self.proc.terminate()
-            except:
-                pass
-
         self.pb['value'] = 0
         self.status.config(text="Cancelled")
         self.flash_btn.config(state="normal")
@@ -169,18 +170,23 @@ class App:
             messagebox.showerror("Error", "Select image + USB")
             return
 
-        # 🔥 CONFIRM GUI (แทน input)
         if not messagebox.askyesno("Confirm", f"Flash {self.device} ?"):
             return
 
+        # 🔥 FAST + SMOOTH PROGRESS
         def progress(p, s):
             if not self.running:
                 return
 
-            # 🔥 THREAD-SAFE UI UPDATE
+            now = time.time()
+            if now - self.last_update < 0.05:
+                return
+
+            self.last_update = now
+
             self.root.after(0, lambda: (
                 self.pb.config(value=p),
-                self.status.config(text=f"{p}% | {s} MB/s")
+                self.status.config(text=f"{p}%")
             ))
 
         def run():
@@ -193,13 +199,13 @@ class App:
                 safety_pipeline(self.device)
 
                 self.log("Flashing...")
-                self.proc = flash_with_rust(self.image, self.device, progress)
+                flash_with_rust(self.image, self.device, progress)
 
                 if not self.running:
                     return
 
                 self.log("Verifying...")
-                ok = verify_flash(self.image, self.device)
+                ok = quick_verify(self.image, self.device)
 
                 if ok:
                     self.status.config(text="Done")
@@ -218,7 +224,7 @@ class App:
                 self.flash_btn.config(state="normal")
                 self.cancel_btn.config(state="disabled")
 
-        threading.Thread(target=run).start()
+        threading.Thread(target=run, daemon=True).start()
 
 
 root = tk.Tk()
