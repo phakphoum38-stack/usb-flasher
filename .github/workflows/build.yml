@@ -36,11 +36,23 @@ jobs:
       # =========================
       # BUILD EXE (🔥 FIX สำคัญ)
       # =========================
-      - name: Build EXE
+      # =========================
+      # BUILD GUI
+      # =========================
+      - name: Build GUI
         run: |
-          pyinstaller --noconfirm --windowed --onefile wizard.py ^
-            --name USBFlashToolPro ^
-            --add-binary "rust-flash.exe;."
+         pyinstaller --noconfirm --windowed --onefile wizard.py ^
+         --name USBFlashToolPro ^
+         --add-binary "rust-flash.exe;."
+
+      # =========================
+      # BUILD CLI
+      # =========================
+      - name: Build CLI
+        run: |
+         pyinstaller --noconfirm --onefile flasher.py ^
+         --name usb-flasher-cli ^
+         --add-binary "rust-flash.exe;."
 
       # =========================
       # DEBUG (เช็คไฟล์)
