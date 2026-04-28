@@ -1,67 +1,65 @@
-name: Build Flash Tool
+name: Build & Release Flash Tool
 
 on:
-
   push:
-
     tags:
-
       - "v*"
 
 jobs:
-
-  build-windows:
-
+  build:
     runs-on: windows-latest
 
     steps:
-
-      - name: Checkout code
-
+      # =========================
+      # CHECKOUT
+      # =========================
+      - name: Checkout
         uses: actions/checkout@v4
 
+      # =========================
+      # PYTHON SETUP
+      # =========================
       - name: Setup Python
-
         uses: actions/setup-python@v5
-
         with:
-
           python-version: "3.10"
 
-      - name: Install dependencies
-
+      # =========================
+      # INSTALL DEPENDENCIES
+      # =========================
+      - name: Install deps
         run: |
-
           python -m pip install --upgrade pip
-
           pip install pyinstaller tqdm
 
       # =========================
-
       # BUILD EXE
-
       # =========================
-
       - name: Build EXE
-
         run: |
-
-          pyinstaller --noconfirm --onefile wizard.py --name USB-Flasher-Pro
-
-      # =========================
-
-      # CREATE RELEASE
+          pyinstaller --noconfirm --windowed --onefile wizard.py --name USBFlashToolPro
 
       # =========================
+      # INSTALL NSIS
+      # =========================
+      - name: Install NSIS
+        run: choco install nsis -y
 
-      - name: Upload Release Asset
+      # =========================
+      # BUILD INSTALLER
+      # =========================
+      - name: Build Installer
+        run: |
+          makensis installer.nsi
 
+      # =========================
+      # UPLOAD RELEASE
+      # =========================
+      - name: Upload Release
         uses: softprops/action-gh-release@v2
-
         with:
-
-          files: dist/*
-
+          files: |
+            dist/USBFlashToolPro.exe
+            USBFlashToolPro-Setup.exe
         env:
-
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
