@@ -4,38 +4,25 @@ echo "========================="
 echo "AUTO VERSION BUMP SYSTEM"
 echo "========================="
 
-cd usb-flasher || exit
+version_file="VERSION"
 
-# =========================
-# READ VERSION
-# =========================
-version=$(cat VERSION)
+if [ ! -f "$version_file" ]; then
+  echo "1.0.0" > "$version_file"
+fi
 
-echo "Current version: $version"
+version=$(cat "$version_file")
 
-# =========================
-# SPLIT VERSION
-# =========================
-major=$(echo $version | cut -d. -f1)
-minor=$(echo $version | cut -d. -f2)
-patch=$(echo $version | cut -d. -f3)
+major=$(echo "$version" | cut -d. -f1)
+minor=$(echo "$version" | cut -d. -f2)
+patch=$(echo "$version" | cut -d. -f3)
 
-# =========================
-# BUMP PATCH VERSION
-# =========================
 patch=$((patch + 1))
 new_version="$major.$minor.$patch"
 
-echo "New version: $new_version"
+echo "$new_version" > "$version_file"
 
-# =========================
-# SAVE VERSION
-# =========================
-echo $new_version > VERSION
+echo "Version: $new_version"
 
-# =========================
-# GIT OPERATIONS
-# =========================
 git add .
 git commit -m "release $new_version"
 
@@ -43,7 +30,3 @@ git tag "v$new_version"
 
 git push origin main
 git push origin "v$new_version"
-
-echo "========================="
-echo "RELEASE DONE: v$new_version"
-echo "========================="
