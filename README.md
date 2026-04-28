@@ -29,3 +29,4 @@ sudo python flasher.py --image file.img --device /dev/sdb
 - [ ] Progress bar UI
 - [ ] Device auto-detect
 - [ ] Verify (
+# test
