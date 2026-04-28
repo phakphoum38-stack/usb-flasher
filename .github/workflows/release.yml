@@ -1,4 +1,4 @@
-name: Full Release Pipeline
+name: Build & Release FlashForge Pro
 
 on:
   push:
@@ -20,26 +20,28 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -r requirements.txt
-          pip install pyinstaller psutil requests
+          python -m pip install --upgrade pip
+          pip install pyinstaller
 
+      # =========================
+      # 🏗 BUILD EXE
+      # =========================
       - name: Build EXE
         run: |
-          pyinstaller --onefile --windowed wizard.py ^
-          --add-data "kexts_repo;kexts_repo" ^
-          --add-data "acpi_repo;acpi_repo"
+          pyinstaller --onefile --windowed wizard.py --name FlashForgePro
 
-      - name: Sign EXE
-        run: |
-          echo "Signing step here (optional)"
-          # signtool sign /f cert.pfx ...
-
-      - name: Upload Artifact
+      # =========================
+      # 📦 Upload artifact
+      # =========================
+      - name: Upload build
         uses: actions/upload-artifact@v4
         with:
-          name: USB-Flasher-Pro
+          name: FlashForgePro
           path: dist/*
 
+  # =========================
+  # 🚀 RELEASE
+  # =========================
   release:
     needs: build
     runs-on: ubuntu-latest
