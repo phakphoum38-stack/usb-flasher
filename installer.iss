@@ -1,15 +1,20 @@
 [Setup]
 AppName=USB Flasher Pro
 AppVersion=1.0.0
-DefaultDirName={pf}\USBFlasher
+DefaultDirName={pf}\USBFlasherPro
+DefaultGroupName=USB Flasher Pro
 OutputDir=dist
-OutputBaseFilename=USBFlasherInstaller
+OutputBaseFilename=USBFlasherPro_Setup
+Compression=lzma
+SolidCompression=yes
+WizardStyle=modern
 
 [Files]
-Source: "dist\USB-Flasher-Pro.exe"; DestDir: "{app}"
+Source: "dist\USB-Flasher-Pro.exe"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
-Name: "{group}\USB Flasher"; Filename: "{app}\USB-Flasher-Pro.exe"
+Name: "{group}\USB Flasher Pro"; Filename: "{app}\USB-Flasher-Pro.exe"
+Name: "{commondesktop}\USB Flasher Pro"; Filename: "{app}\USB-Flasher-Pro.exe"
 
 [Run]
-Filename: "{app}\USB-Flasher-Pro.exe"; Description: "Run USB Flasher"; Flags: nowait postinstall
+Filename: "{app}\USB-Flasher-Pro.exe"; Description: "Launch App"; Flags: nowait postinstall
