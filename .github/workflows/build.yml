@@ -42,6 +42,7 @@ jobs:
             --windowed ^
             --onefile ^
             --name USBFlashToolPro ^
+            --icon=icon.ico
             --add-binary "rust-flash.exe;." ^
             --clean ^
             --strip ^
