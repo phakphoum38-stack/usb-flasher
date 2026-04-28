@@ -17,12 +17,12 @@ jobs:
         uses: actions/checkout@v4
 
       # =========================
-      # PYTHON SETUP
+      # PYTHON
       # =========================
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: "3.11"
 
       # =========================
       # INSTALL DEPENDENCIES
@@ -30,14 +30,23 @@ jobs:
       - name: Install deps
         run: |
           python -m pip install --upgrade pip
-          pip install pyinstaller tqdm
+          pip install -r requirements.txt || pip install requests tqdm
+          pip install pyinstaller
 
       # =========================
-      # BUILD EXE
+      # BUILD EXE (🔥 FIX สำคัญ)
       # =========================
       - name: Build EXE
         run: |
-          pyinstaller --noconfirm --windowed --onefile wizard.py --name USBFlashToolPro
+          pyinstaller --noconfirm --windowed --onefile wizard.py ^
+            --name USBFlashToolPro ^
+            --add-binary "rust-flash.exe;."
+
+      # =========================
+      # DEBUG (เช็คไฟล์)
+      # =========================
+      - name: Show dist
+        run: dir dist
 
       # =========================
       # INSTALL NSIS
@@ -46,14 +55,18 @@ jobs:
         run: choco install nsis -y
 
       # =========================
-      # BUILD INSTALLER
+      # BUILD INSTALLER (optional)
       # =========================
       - name: Build Installer
         run: |
-          makensis installer.nsi
+          if exist installer.nsi (
+            makensis installer.nsi
+          ) else (
+            echo "No installer.nsi, skipping..."
+          )
 
       # =========================
-      # UPLOAD RELEASE
+      # RELEASE
       # =========================
       - name: Upload Release
         uses: softprops/action-gh-release@v2
