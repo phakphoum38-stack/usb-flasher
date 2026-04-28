@@ -10,6 +10,7 @@ from flasher.devices import get_usb_devices
 from flasher.safety import safety_pipeline
 from flasher.rust_core import flash_with_rust
 from flasher.verify import quick_verify
+from flasher.formats import prepare_image
 from flasher.updater import check_update, download_update, run_update
 from flasher.crash_report import send_crash
 from flasher.config import load_config
@@ -26,11 +27,9 @@ def get_version():
 
 APP_VERSION = get_version()
 
-# =========================
-# LOG
-# =========================
 LOG_DIR = "logs"
 os.makedirs(LOG_DIR, exist_ok=True)
+
 
 def is_admin():
     try:
@@ -60,7 +59,7 @@ class App:
         self.check_updates()
 
     # =========================
-    # LOG + ROTATION
+    # LOG
     # =========================
     def log(self, msg):
         path = os.path.join(LOG_DIR, "latest.log")
@@ -83,7 +82,7 @@ class App:
             f.write(line)
 
     # =========================
-    # AUTO LOAD USB
+    # AUTO USB
     # =========================
     def auto_load(self):
         self.devices = get_usb_devices()
@@ -218,14 +217,19 @@ class App:
                 self.log("Safety check...")
                 safety_pipeline(self.device)
 
+                # 🔥 FIX ISO/DMG
+                self.log("Preparing image...")
+                img = prepare_image(self.image)
+                self.log(f"Using: {img}")
+
                 self.log("Flashing...")
-                flash_with_rust(self.image, self.device, progress)
+                flash_with_rust(img, self.device, progress)
 
                 if not self.running:
                     return
 
                 self.log("Verifying...")
-                ok = quick_verify(self.image, self.device)
+                ok = quick_verify(img, self.device)
 
                 if ok:
                     self.status.config(text="Done")
