@@ -1,29 +1,67 @@
-name: Build EXE
+name: Build Flash Tool
 
 on:
+
   push:
-    branches: [ "main" ]
+
+    tags:
+
+      - "v*"
 
 jobs:
-  build:
+
+  build-windows:
+
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v3
 
-    - name: Setup Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: "3.10"
+      - name: Checkout code
 
-    - name: Install deps
-      run: pip install -r requirements.txt pyinstaller
+        uses: actions/checkout@v4
 
-    - name: Build EXE
-      run: pyinstaller --onefile --windowed wizard.py
+      - name: Setup Python
 
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: usb-flasher
-        path: dist/*
+        uses: actions/setup-python@v5
+
+        with:
+
+          python-version: "3.10"
+
+      - name: Install dependencies
+
+        run: |
+
+          python -m pip install --upgrade pip
+
+          pip install pyinstaller tqdm
+
+      # =========================
+
+      # BUILD EXE
+
+      # =========================
+
+      - name: Build EXE
+
+        run: |
+
+          pyinstaller --noconfirm --onefile wizard.py --name USB-Flasher-Pro
+
+      # =========================
+
+      # CREATE RELEASE
+
+      # =========================
+
+      - name: Upload Release Asset
+
+        uses: softprops/action-gh-release@v2
+
+        with:
+
+          files: dist/*
+
+        env:
+
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
