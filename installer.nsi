@@ -1,28 +1,44 @@
-!include "MUI2.nsh"
+; =========================
+; USB Flash Tool Pro Installer
+; Enterprise Level
+; =========================
 
-Name "USB Flash Tool Pro"
+!include "MUI2.nsh"
+!include "FileFunc.nsh"
+!include "LogicLib.nsh"
+
+!define APPNAME "USB Flash Tool Pro"
+!define COMPANY "FlashForge"
+!define VERSION "1.0.0"
+!define EXE "USBFlashToolPro.exe"
+
+Name "${APPNAME} ${VERSION}"
 OutFile "USBFlashToolPro-Setup.exe"
-InstallDir "$PROGRAMFILES\USBFlashToolPro"
+InstallDir "$PROGRAMFILES64\${APPNAME}"
+InstallDirRegKey HKLM "Software\${APPNAME}" "Install_Dir"
 RequestExecutionLevel admin
 
 # =========================
-# ICON
+# ICON / BRANDING
 # =========================
 !define MUI_ICON "icon.ico"
 !define MUI_UNICON "icon.ico"
 
+BrandingText "FlashForge Installer"
+
 # =========================
-# UI PAGES
+# UI MODERN
 # =========================
+!define MUI_ABORTWARNING
+!define MUI_FINISHPAGE_RUN "$INSTDIR\${EXE}"
+!define MUI_FINISHPAGE_RUN_TEXT "Launch USB Flash Tool Pro"
+
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_LICENSE "license.txt"
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH
 
-# =========================
-# UNINSTALL UI
-# =========================
 !insertmacro MUI_UNPAGE_CONFIRM
 !insertmacro MUI_UNPAGE_INSTFILES
 
@@ -31,21 +47,41 @@ RequestExecutionLevel admin
 # =========================
 # INSTALL SECTION
 # =========================
-Section "Install"
+Section "Main"
 
   SetOutPath "$INSTDIR"
 
-  File "dist\USBFlashToolPro.exe"
+  ; Copy main EXE
+  File "dist\${EXE}"
 
-  # Start Menu
-  CreateDirectory "$SMPROGRAMS\USB Flash Tool Pro"
-  CreateShortcut "$SMPROGRAMS\USB Flash Tool Pro\USB Flash Tool Pro.lnk" "$INSTDIR\USBFlashToolPro.exe"
+  ; Save install path
+  WriteRegStr HKLM "Software\${APPNAME}" "Install_Dir" "$INSTDIR"
 
-  # Desktop shortcut
-  CreateShortcut "$DESKTOP\USB Flash Tool Pro.lnk" "$INSTDIR\USBFlashToolPro.exe"
+  ; Add uninstall info
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "DisplayName" "${APPNAME}"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "UninstallString" "$INSTDIR\uninstall.exe"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "DisplayVersion" "${VERSION}"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "Publisher" "${COMPANY}"
 
-  # Uninstaller
+  ; Create shortcuts
+  CreateDirectory "$SMPROGRAMS\${APPNAME}"
+  CreateShortcut "$SMPROGRAMS\${APPNAME}\${APPNAME}.lnk" "$INSTDIR\${EXE}"
+  CreateShortcut "$DESKTOP\${APPNAME}.lnk" "$INSTDIR\${EXE}"
+
+  ; Write uninstaller
   WriteUninstaller "$INSTDIR\uninstall.exe"
+
+SectionEnd
+
+# =========================
+# OPTIONAL: AUTO UPDATE FILE
+# =========================
+Section "Config"
+
+  SetOutPath "$INSTDIR"
+  FileOpen $0 "$INSTDIR\config.json" w
+  FileWrite $0 '{"auto_update": true}'
+  FileClose $0
 
 SectionEnd
 
@@ -54,13 +90,34 @@ SectionEnd
 # =========================
 Section "Uninstall"
 
-  Delete "$INSTDIR\USBFlashToolPro.exe"
+  ; Remove files
+  Delete "$INSTDIR\${EXE}"
+  Delete "$INSTDIR\config.json"
   Delete "$INSTDIR\uninstall.exe"
 
-  Delete "$DESKTOP\USB Flash Tool Pro.lnk"
-  Delete "$SMPROGRAMS\USB Flash Tool Pro\USB Flash Tool Pro.lnk"
+  ; Remove shortcuts
+  Delete "$DESKTOP\${APPNAME}.lnk"
+  Delete "$SMPROGRAMS\${APPNAME}\${APPNAME}.lnk"
 
-  RMDir "$SMPROGRAMS\USB Flash Tool Pro"
+  ; Remove folders
+  RMDir "$SMPROGRAMS\${APPNAME}"
   RMDir "$INSTDIR"
 
+  ; Remove registry
+  DeleteRegKey HKLM "Software\${APPNAME}"
+  DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}"
+
 SectionEnd
+
+# =========================
+# PRE-INSTALL CHECK
+# =========================
+Function .onInit
+  ; Prevent install without admin
+  UserInfo::GetAccountType
+  Pop $0
+  ${If} $0 != "admin"
+    MessageBox MB_ICONSTOP "Please run installer as Administrator."
+    Abort
+  ${EndIf}
+FunctionEnd
