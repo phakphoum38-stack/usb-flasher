@@ -1,4 +1,4 @@
-name: Build & Release FlashForge Pro
+name: Auto Release Pipeline
 
 on:
   push:
@@ -24,30 +24,16 @@ jobs:
           pip install pyinstaller
 
       # =========================
-      # 🏗 BUILD EXE
+      # BUILD EXE
       # =========================
       - name: Build EXE
         run: |
           pyinstaller --onefile --windowed wizard.py --name FlashForgePro
 
       # =========================
-      # 📦 Upload artifact
+      # RELEASE
       # =========================
-      - name: Upload build
-        uses: actions/upload-artifact@v4
-        with:
-          name: FlashForgePro
-          path: dist/*
-
-  # =========================
-  # 🚀 RELEASE
-  # =========================
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Create GitHub Release
+      - name: Upload Release
         uses: softprops/action-gh-release@v2
         with:
           files: dist/*
