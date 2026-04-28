@@ -14,11 +14,23 @@ from flasher.updater import check_update, download_update, run_update
 from flasher.crash_report import send_crash
 from flasher.config import load_config
 
-APP_VERSION = "1.1.0"
+# =========================
+# VERSION
+# =========================
+def get_version():
+    try:
+        with open("VERSION") as f:
+            return f.read().strip()
+    except:
+        return "1.0.0"
 
+APP_VERSION = get_version()
+
+# =========================
+# LOG
+# =========================
 LOG_DIR = "logs"
 os.makedirs(LOG_DIR, exist_ok=True)
-
 
 def is_admin():
     try:
@@ -30,8 +42,8 @@ def is_admin():
 class App:
     def __init__(self, root):
         self.root = root
-        self.root.title("USB Flash Tool Pro")
-        self.root.geometry("700x520")
+        self.root.title(f"USB Flash Tool Pro v{APP_VERSION}")
+        self.root.geometry("720x540")
 
         self.cfg = load_config()
 
@@ -40,13 +52,15 @@ class App:
         self.devices = []
         self.running = False
 
-        self.last_update = 0  # 🔥 throttle UI
+        self.last_update = 0
+        self.start_time = 0
 
         self.build_ui()
+        self.auto_load()
         self.check_updates()
 
     # =========================
-    # 📝 LOG + ROTATION
+    # LOG + ROTATION
     # =========================
     def log(self, msg):
         path = os.path.join(LOG_DIR, "latest.log")
@@ -69,12 +83,23 @@ class App:
             f.write(line)
 
     # =========================
-    # 🔄 UPDATE
+    # AUTO LOAD USB
+    # =========================
+    def auto_load(self):
+        self.devices = get_usb_devices()
+        self.listbox.delete(0, tk.END)
+
+        for d in self.devices:
+            self.listbox.insert(tk.END, f"{d['path']} | {d['model']}")
+
+        self.log("USB auto-detected")
+
+    # =========================
+    # UPDATE
     # =========================
     def check_updates(self):
         if not self.cfg.get("auto_update"):
             return
-
         try:
             data = check_update(APP_VERSION)
             if data:
@@ -86,17 +111,17 @@ class App:
             pass
 
     # =========================
-    # 🎨 UI
+    # UI
     # =========================
     def build_ui(self):
-        tk.Label(self.root, text="USB Flash Tool Pro", font=("Arial", 18)).pack(pady=10)
+        tk.Label(self.root, text=f"USB Flash Tool Pro v{APP_VERSION}", font=("Arial", 18)).pack(pady=10)
 
         tk.Button(self.root, text="Select Image", command=self.select_image).pack()
 
         self.file_label = tk.Label(self.root, text="No file")
         self.file_label.pack()
 
-        tk.Button(self.root, text="Load USB", command=self.load_devices).pack()
+        tk.Button(self.root, text="Refresh USB", command=self.auto_load).pack()
 
         self.listbox = tk.Listbox(self.root)
         self.listbox.pack(fill="both", expand=True)
@@ -119,7 +144,7 @@ class App:
         self.logbox.pack(fill="both", expand=True)
 
     # =========================
-    # 📁 SELECT IMAGE
+    # SELECT IMAGE
     # =========================
     def select_image(self):
         path = filedialog.askopenfilename()
@@ -129,17 +154,8 @@ class App:
             self.log(f"Image: {path}")
 
     # =========================
-    # 💽 LOAD USB
+    # SELECT DEVICE
     # =========================
-    def load_devices(self):
-        self.devices = get_usb_devices()
-        self.listbox.delete(0, tk.END)
-
-        for d in self.devices:
-            self.listbox.insert(tk.END, f"{d['path']} | {d['model']}")
-
-        self.log("Devices loaded")
-
     def select_device(self, e):
         if not self.listbox.curselection():
             return
@@ -148,7 +164,7 @@ class App:
         self.log(f"Device: {self.device}")
 
     # =========================
-    # ❌ CANCEL
+    # CANCEL
     # =========================
     def cancel(self):
         self.running = False
@@ -159,7 +175,7 @@ class App:
         self.log("Cancelled")
 
     # =========================
-    # 🚀 START FLASH
+    # START
     # =========================
     def start(self):
         if not is_admin():
@@ -173,7 +189,8 @@ class App:
         if not messagebox.askyesno("Confirm", f"Flash {self.device} ?"):
             return
 
-        # 🔥 FAST + SMOOTH PROGRESS
+        self.start_time = time.time()
+
         def progress(p, s):
             if not self.running:
                 return
@@ -184,9 +201,12 @@ class App:
 
             self.last_update = now
 
+            elapsed = now - self.start_time
+            eta = int((100 - p) * (elapsed / p)) if p > 0 else 0
+
             self.root.after(0, lambda: (
                 self.pb.config(value=p),
-                self.status.config(text=f"{p}%")
+                self.status.config(text=f"{p}% | ETA {eta}s")
             ))
 
         def run():
