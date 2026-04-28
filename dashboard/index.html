@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flasher Dashboard</title>
+</head>
+<body>
+    <h1>Crash Logs</h1>
+    <pre id="logs"></pre>
+
+    <script>
+        fetch("/logs.json")
+        .then(r => r.text())
+        .then(t => {
+            document.getElementById("logs").innerText = t;
+        });
+    </script>
+</body>
+</html>
