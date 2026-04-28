@@ -57,14 +57,14 @@ jobs:
       - name: Build CLI
         run: |
           pyinstaller flasher.py ^
-            --noconfirm ^
-            --onedir ^
-            --name usb-flasher-cli ^
-            --icon=icon.ico
-            --add-binary "rust-flash.exe;." ^
-            --clean ^
-            --strip ^
-            --noupx
+          --noconfirm ^
+          --onedir ^
+          --name usb-flasher-cli ^
+          --icon=icon.ico ^
+          --add-binary "rust-flash.exe;." ^
+          --clean ^
+          --strip ^
+          --noupx
 
       # =========================
       # INSTALL NSIS
