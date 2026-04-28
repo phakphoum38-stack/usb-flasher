@@ -1,4 +1,4 @@
-name: Final Release Build
+name: Full Release Pipeline
 
 on:
   push:
@@ -10,31 +10,41 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
 
-      - name: Install deps
+      - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt pyinstaller psutil
+          pip install -r requirements.txt
+          pip install pyinstaller psutil requests
 
       - name: Build EXE
         run: |
-          pyinstaller --onefile --windowed wizard.py \
-          --add-data "kexts_repo;kexts_repo" \
-          --add-data "acpi_repo;acpi_repo" \
-          --add-data "OpenCore;OpenCore"
+          pyinstaller --onefile --windowed wizard.py ^
+          --add-data "kexts_repo;kexts_repo" ^
+          --add-data "acpi_repo;acpi_repo"
 
-      - name: Upload artifact
+      - name: Sign EXE
+        run: |
+          echo "Signing step here (optional)"
+          # signtool sign /f cert.pfx ...
+
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: usb-flasher-pro
+          name: USB-Flasher-Pro
           path: dist/*
 
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
