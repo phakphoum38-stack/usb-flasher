@@ -23,7 +23,7 @@ echo "$new_version" > "$version_file"
 
 echo "Version: $new_version"
 
-git add .
+git add "$version_file"
 git commit -m "release $new_version"
 
 git tag "v$new_version"
